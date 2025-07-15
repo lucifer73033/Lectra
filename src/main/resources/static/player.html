@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Player with Chat</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+        #videoPlayer {
+            width: 80%;
+            max-width: 800px;
+            margin-bottom: 20px;
+        }
+        #chatBox {
+            width: 80%;
+            height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #f9f9f9;
+        }
+        #chatInput {
+            width: 70%;
+            padding: 5px;
+        }
+        #sendChat {
+            padding: 5px 10px;
+        }
+    </style>
+</head>
+<body>
+<h2>Video Player with Real-time Chat</h2>
+
+<video id="videoPlayer" controls>
+    <source src="video.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+</video>
+
+<div id="chatBox"></div>
+
+<input type="text" id="chatInput" placeholder="Type your message..." />
+<button id="sendChat">Send</button>
+
+<script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@5.3.0/dist/stomp.min.js"></script>
+<script>
+        // Elements from HTML
+        const chatBox = document.getElementById("chatBox");
+        const chatInput = document.getElementById("chatInput");
+        const sendChatBtn = document.getElementById("sendChat");
+        const videoPlayer = document.getElementById("videoPlayer");
+
+        // WebSocket client configuration
+        const roomId = "sampleRoomID"; // You can dynamically fetch this room ID based on your app's logic
+        const client = new StompJs.Client({
+            brokerURL: "ws://localhost:8080/Lectra",  // WebSocket URL (change if necessary)
+            reconnectDelay: 5000,
+            onConnect: () => {
+                console.log("Connected to WebSocket");
+
+                // Subscribe to chat and video sync topics for the room
+                client.subscribe(`/topic/room/chat/${roomId}`, (message) => {
+                    const receivedMessage = JSON.parse(message.body);
+                    appendChat(receivedMessage);
+                });
+
+                // Example: Send the sync event when the video is played
+                videoPlayer.addEventListener('play', () => {
+                    const syncMessage = {
+                        purpose: "sync",
+                        payload: videoPlayer.currentTime.toString(),
+                    };
+                    sendSyncMessage(syncMessage);
+                });
+
+                // Send sync message on pause
+                videoPlayer.addEventListener('pause', () => {
+                    const syncMessage = {
+                        purpose: "sync",
+                        payload: videoPlayer.currentTime.toString(),
+                    };
+                    sendSyncMessage(syncMessage);
+                });
+            },
+            onStompError: (frame) => {
+                console.error("STOMP error:", frame);
+            },
+        });
+
+        // Activate the client (open WebSocket connection)
+        client.activate();
+
+        // Send chat message handler
+        sendChatBtn.addEventListener("click", () => {
+            const msg = chatInput.value.trim();
+            if (msg === "") return;
+
+            // Prepare the MessageDTO object
+            const payload = {
+                purpose: "chat",  // You can set this to different values based on the type of message (e.g., "sync" for sync events)
+                payload: msg,     // The actual chat message
+            };
+
+            // Send the chat message to the server
+            client.publish({
+                destination: `/app/room/chat/${roomId}`,
+                body: JSON.stringify(payload),
+            });
+
+            chatInput.value = "";  // Clear the input field
+        });
+
+        // Append received chat message to the chat box
+        function appendChat(messageDTO) {
+            const entry = document.createElement("div");
+            entry.textContent = `User: ${messageDTO.payload}`;  // Displaying the message payload (could be user + message if you add that)
+            chatBox.appendChild(entry);
+            chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll to the bottom
+        }
+
+        // Send sync message to the server
+        function sendSyncMessage(syncMessage) {
+            client.publish({
+                destination: `/app/room/video/${roomId}`,
+                body: JSON.stringify(syncMessage),
+            });
+        }
+    </script>
+</body>
+</html>
