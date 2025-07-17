@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.swing.text.html.Option;
+import java.io.IOException;
 import java.net.http.HttpResponse;
 import java.util.Optional;
 
@@ -21,7 +22,7 @@ public class S3Controller {
     private S3Service s3Service;
 
     @PostMapping("/upload")
-    HttpStatus uploadFile(@RequestParam MultipartFile file){
+    HttpStatus uploadFile(@RequestParam MultipartFile file)throws IOException {
         HttpStatus response = s3Service.uploadFile(file);
         return response;
     }
