@@ -8,7 +8,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 // write logic for sending state,seek time and retreiving correct seek time in case of delay✅
 // write code for sending receiving play, pause,seek video events✅
 // uploading downloading videos on s3✅
-// handling large video files when uploading to s3
+// handling large video files when uploading to s3✅
+// handling upload of files parallely to s3 using multipart and multithreading to get better upload speeds
 // creating vault type of feature for storing keys
 // Doodle implementation
 // AI features

@@ -2,6 +2,7 @@ package Lectra.S3;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
+import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,7 +47,9 @@ public class S3Service {
 //        Files.copy(inputStream,destinationFile, StandardCopyOption.REPLACE_EXISTING);
 
         try{
-            PutObjectRequest request = new PutObjectRequest(bucketName, key.toString(), multipartFile.getInputStream(), null);
+            ObjectMetadata metadata=new ObjectMetadata();
+            metadata.setContentLength(multipartFile.getSize());
+            PutObjectRequest request = new PutObjectRequest(bucketName, key.toString(), multipartFile.getInputStream(), metadata);
             amazonS3.putObject(request);
             return HttpStatus.OK;
         }catch(IOException e){
