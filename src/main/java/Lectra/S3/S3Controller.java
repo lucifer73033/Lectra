@@ -32,4 +32,10 @@ public class S3Controller {
         Optional response=s3Service.getURL(key);
         return response.isPresent()?ResponseEntity.status(200).body((String)response.get()):ResponseEntity.status(500).body("Error");
     }
+
+    @PostMapping("/multipartUpload")
+    HttpStatus multipartUpload(@RequestParam MultipartFile file)throws IOException{
+        HttpStatus status = s3Service.multipartUploadFile(file);
+        return status;
+    }
 }

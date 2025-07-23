@@ -1,9 +1,7 @@
 package Lectra.S3;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.s3.model.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,6 +19,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.rmi.NoSuchObjectException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -62,5 +62,24 @@ public class S3Service {
         GeneratePresignedUrlRequest request = new GeneratePresignedUrlRequest(bucketName,key);
         URL url = amazonS3.generatePresignedUrl(request);
         return Optional.of(url.toString());
+    }
+
+    public HttpStatus multipartUploadFile(MultipartFile file)throws IOException{
+        UUID key = UUID.randomUUID();
+        InitiateMultipartUploadResult uploadResult=amazonS3.initiateMultipartUpload(new InitiateMultipartUploadRequest(bucketName,key.toString()));
+        String multipartID = uploadResult.getUploadId();
+        UploadPartRequest request = new UploadPartRequest();
+        request = request.withBucketName(bucketName)
+                .withInputStream(file.getInputStream())
+                .withPartNumber(1)
+                .withUploadId(multipartID)
+                .withKey(key.toString());
+
+        UploadPartResult partResult = amazonS3.uploadPart(request);
+        List<PartETag> ETTags = new ArrayList<>();
+        ETTags.add(partResult.getPartETag());
+        CompleteMultipartUploadRequest completeMultipartUploadRequest = new CompleteMultipartUploadRequest(bucketName,key.toString(),uploadResult.getUploadId(),ETTags);
+        CompleteMultipartUploadResult completeMultipartUploadResult=amazonS3.completeMultipartUpload(completeMultipartUploadRequest);
+        return HttpStatus.OK;
     }
 }
