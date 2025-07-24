@@ -38,4 +38,10 @@ public class S3Controller {
         HttpStatus status = s3Service.multipartUploadFile(file);
         return status;
     }
+
+    @PostMapping("multipartUploadTest")
+    HttpStatus multipartUploadTest(@RequestParam MultipartFile file)throws IOException{
+        HttpStatus status = s3Service.multipartUploadFileTest(file);
+        return status;
+    }
 }
