@@ -66,6 +66,7 @@ public class S3Service {
 
     public HttpStatus multipartUploadFile(MultipartFile file)throws IOException{
         UUID key = UUID.randomUUID();
+//        System.out.println(file.getSize());
         InitiateMultipartUploadResult uploadResult=amazonS3.initiateMultipartUpload(new InitiateMultipartUploadRequest(bucketName,key.toString()));
         String multipartID = uploadResult.getUploadId();
         UploadPartRequest request = new UploadPartRequest();
@@ -73,11 +74,15 @@ public class S3Service {
                 .withInputStream(file.getInputStream())
                 .withPartNumber(1)
                 .withUploadId(multipartID)
-                .withKey(key.toString());
-
+                .withKey(key.toString())
+                .withPartSize(file.getSize());
         UploadPartResult partResult = amazonS3.uploadPart(request);
         List<PartETag> ETTags = new ArrayList<>();
         ETTags.add(partResult.getPartETag());
+        System.out.println("ET Tag: "+partResult.getETag());
+        PartListing listing= amazonS3.listParts(new ListPartsRequest(bucketName,key.toString(),multipartID));
+        List<PartSummary> list=listing.getParts();
+        list.stream().map(x->String.valueOf(x.getSize())+" "+x.getETag()).forEach(System.out::println);
         CompleteMultipartUploadRequest completeMultipartUploadRequest = new CompleteMultipartUploadRequest(bucketName,key.toString(),uploadResult.getUploadId(),ETTags);
         CompleteMultipartUploadResult completeMultipartUploadResult=amazonS3.completeMultipartUpload(completeMultipartUploadRequest);
         return HttpStatus.OK;
